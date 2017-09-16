@@ -52,13 +52,34 @@ static int storjshare_connection(void *cls,
         } else if (0 == strcmp(method, "GET")) {
 
             // TODO check token
-
+            // TODO check shard exists
             // TODO send shard data
+
+            int status_code = MHD_HTTP_OK;
+            char *page = "Shard data!";
+            int page_size = 11;
+            char *sent_page = calloc(page_size + 1, sizeof(char));
+            memcpy(sent_page, page, page_size);
+            struct MHD_Response *response;
+
+            response = MHD_create_response_from_buffer(page_size,
+                                                       (void *) sent_page,
+                                                       MHD_RESPMEM_MUST_FREE);
+
+            int ret = MHD_queue_response(connection, status_code, response);
+            if (ret == MHD_NO) {
+                fprintf(stderr, "Response error\n");
+            }
+
+            MHD_destroy_response(response);
+
+            return ret;
 
         }
 
     }
 
+    return MHD_NO;
 
 }
 
