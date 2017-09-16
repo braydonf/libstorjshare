@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libstorjshare.la
 libstorjshare_la_SOURCES = storjshare.c shareshare.h
-libstorjshare_la_LIBADD = -lcurl -ljson-c -lm
+libstorjshare_la_LIBADD = -lcurl -ljson-c -luv -lmicrohttpd -lsqlite3 -lm
 libstorjshare_la_LDFLAGS = -Wall
 if BUILD_STORJ_DLL
 libstorjshare_la_LDFLAGS += -no-undefined
