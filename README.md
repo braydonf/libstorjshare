@@ -89,14 +89,14 @@ Each shard is saved in a directory structure, the shard hash is split into chunk
 
 ```
 ↳ <2-bytes> directory - first two bytes of shard hash used as the directory name
-  ↳ <4-bytes> directory - next four bytes of the shard has used as the directory name
-    ↳ <14-bytes> file - the last remaining bytes used for the filename
+  ↳ <2-bytes> directory - next two bytes of the shard has used as the directory name
+    ↳ <16-bytes> file - the last remaining bytes used for the filename
 ```
 
-- Maximum total directories is 16 ^ 6 = 16,777,216
-- With 10,000 files in each it would be 167,772,160,000 files total
+- Maximum total directories is 16 ^ 4 = 65,536
+- With 100,000 files in each it would be 6,553,600,000 files total
 
-The goal is to minimize number of folders and number of files per folder, but typically have multiple files in a folder. A collision of the first 6 bytes of the hash is unlikely but not too difficult.
+The goal is to minimize number of folders and number of files per folder, but typically have multiple files in a folder. A collision of the first 4 bytes of the hash is unlikely but not too improbable.
 
 ### SQLite Database
 
