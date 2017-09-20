@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <getopt.h>
 
 #include "storjshare.h"
@@ -180,73 +179,72 @@ int main(int argc, char **argv)
     }
 
 
-    if (strcmp(command, "start") != 0) {
-        printf("not starting the server\n\n");
-        return 1;
-    }
+    if (strcmp(command, "start") == 0) {
+        printf("starting the server\n\n");
+        struct MHD_Daemon *daemon = NULL;
+        uv_loop_t *loop = uv_default_loop();
+        sqlite3 *db = NULL;
 
-    struct MHD_Daemon *daemon = NULL;
-    uv_loop_t *loop = uv_default_loop();
-    sqlite3 *db = NULL;
+        // TODO read config
+        // TODO handle arguments
 
-    // TODO read config
-    // TODO handle arguments
+        char *db_path = "./shards.sqlite";
 
-    char *db_path = "./shards.sqlite";
-
-    if (sqlite3_open(db_path, &db)) {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        status = 1;
-        goto end_program;
-    }
-
-    int port = 4001;
-
-    daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DUAL_STACK,
-                              port,
-                              NULL,
-                              NULL,
-                              &storjshare_connection,
-                              NULL,
-                              MHD_OPTION_NOTIFY_COMPLETED,
-                              &storjshare_connection_completed,
-                              NULL,
-                              MHD_OPTION_END);
-
-    if (NULL == daemon) {
-        status = 1;
-        goto end_program;
-    }
-
-    uv_signal_t sig;
-    uv_signal_init(loop, &sig);
-    uv_signal_start(&sig, signal_handler, SIGINT);
-
-    bool more;
-    do {
-        more = uv_run(loop, UV_RUN_ONCE);
-        if (more == false) {
-            more = uv_loop_alive(loop);
-            if (uv_run(loop, UV_RUN_NOWAIT) != 0) {
-                more = true;
-            }
+        if (sqlite3_open(db_path, &db)) {
+            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+            status = 1;
+            goto end_program;
         }
 
-    } while (more == true);
+        int port = 4001;
+
+        daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DUAL_STACK,
+                                  port,
+                                  NULL,
+                                  NULL,
+                                  &storjshare_connection,
+                                  NULL,
+                                  MHD_OPTION_NOTIFY_COMPLETED,
+                                  &storjshare_connection_completed,
+                                  NULL,
+                                  MHD_OPTION_END);
+
+        if (NULL == daemon) {
+            status = 1;
+            goto end_program;
+        }
+
+        uv_signal_t sig;
+        uv_signal_init(loop, &sig);
+        uv_signal_start(&sig, signal_handler, SIGINT);
+
+        bool more;
+        do {
+            more = uv_run(loop, UV_RUN_ONCE);
+            if (more == false) {
+                more = uv_loop_alive(loop);
+                if (uv_run(loop, UV_RUN_NOWAIT) != 0) {
+                    more = true;
+                }
+            }
+
+        } while (more == true);
 
 
-end_program:
+    end_program:
 
-    if (loop) {
-        uv_loop_close(loop);
-    }
+        if (loop) {
+            uv_loop_close(loop);
+        }
 
-    if (daemon) {
-        MHD_stop_daemon(daemon);
-    }
+        if (daemon) {
+            MHD_stop_daemon(daemon);
+        }
 
-    if (db) {
-        sqlite3_close(db);
+        if (db) {
+            sqlite3_close(db);
+        }
+        return 1;
     }
 
     return status;
