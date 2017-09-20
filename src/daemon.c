@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <sys/stat.h>
 
 #include "storjshare.h"
 
@@ -15,7 +16,7 @@ static inline void noop() {};
 
 #define HELP_TEXT "usage: storjshare [<options>] <command> [<args>]\n\n"         \
     "These are common Storjshare commands for various situations:\n\n"           \
-    "  start                     start a farming node\n"                         \
+    "  start <config-path>       start a farming node\n"                         \
     "  stop                      stop a farming node\n"                          \
     "  restart                   restart a farming node\n"                       \
     "  status                    check status of node(s)\n"                      \
@@ -127,6 +128,27 @@ static void signal_handler(uv_signal_t *req, int signum)
     uv_signal_stop(req);
 }
 
+static int read_config(char *config_path, char **config_raw)
+{
+    FILE *config_file = fopen(config_path, "r");
+
+    if (!config_file) {
+        printf("Could not open config: %s\n", config_path);
+        return 1;
+    }
+
+    // TODO read config
+    struct stat st;
+    stat(config_path, &st);
+    int config_size = st.st_size;
+
+    // Read config into config_raw
+    *config_raw = calloc(config_size, sizeof(char));;
+    fread(*config_raw, config_size, 1, config_file);
+
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int status = 0;
@@ -181,11 +203,30 @@ int main(int argc, char **argv)
 
     if (strcmp(command, "start") == 0) {
         printf("starting the server\n\n");
+
         struct MHD_Daemon *daemon = NULL;
         uv_loop_t *loop = uv_default_loop();
         sqlite3 *db = NULL;
 
-        // TODO read config
+        char *config_path = argv[command_index + 1];
+        char *config_raw = NULL;
+
+        if (!config_path) {
+            printf("Missing first argument: <config-path>\n");
+            status = 1;
+            goto end_program;
+        }
+
+        int ret = read_config(config_path, &config_raw);
+
+        if (ret == 1) {
+            printf("Could not read config\n");
+            status = 1;
+            goto end_program;
+        }
+
+        printf("Config:\n%s\n",config_raw);
+
         // TODO handle arguments
 
         char *db_path = "./shards.sqlite";
@@ -244,6 +285,11 @@ int main(int argc, char **argv)
         if (db) {
             sqlite3_close(db);
         }
+
+        if (config_raw) {
+            free(config_raw);
+        }
+
         return 1;
     }
 
