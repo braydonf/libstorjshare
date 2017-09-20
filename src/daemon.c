@@ -5,8 +5,39 @@
 #include <assert.h>
 #include <uv.h>
 #include <errno.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #include "storjshare.h"
+
+static inline void noop() {};
+
+#define HELP_TEXT "usage: storjshare [<options>] <command> [<args>]\n\n"         \
+    "These are common Storjshare commands for various situations:\n\n"           \
+    "  start                     start a farming node\n"                         \
+    "  stop                      stop a farming node\n"                          \
+    "  restart                   restart a farming node\n"                       \
+    "  status                    check status of node(s)\n"                      \
+    "  logs                      tail the logs for a node\n"                     \
+    "  create                    create a new configuration\n"                   \
+    "  save                      snapshot the currently managed shares\n"        \
+    "  load                      load a snapshot of previously managed shares\n" \
+    "  destroy                   kills the farming node\n"                       \
+    "  killall                   kills all shares and stops the daemon\n"        \
+    "  daemon                    starts the daemon\n"                            \
+    "  help [cmd]                display help for [cmd]\n\n"                     \
+    "options:\n"                                                                 \
+    "  -h, --help                output usage information\n"                     \
+    "  -v, --version             output the version number\n"                    \
+    "environment variables:\n"                                                   \
+    "  STORJ_BRIDGE              the bridge host "                               \
+    "(e.g. https://api.storj.io)\n"                                              \
+
+
+#define CLI_VERSION "libstorjshare-0.0.0-alpha.1"
+
 
 static int storjshare_connection(void *cls,
                                  struct MHD_Connection *connection,
@@ -99,8 +130,60 @@ static void signal_handler(uv_signal_t *req, int signum)
 
 int main(int argc, char **argv)
 {
-
     int status = 0;
+    int c;
+    int log_level = 0;
+    int index = 0;
+
+    static struct option cmd_options[] = {
+        {"version", no_argument,  0, 'v'},
+        {"log", required_argument,  0, 'l'},
+        {"debug", no_argument,  0, 'd'},
+        {"help", no_argument,  0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    opterr = 0;
+
+    while ((c = getopt_long_only(argc, argv, "hdl:vV:",
+                                 cmd_options, &index)) != -1) {
+        switch (c) {
+            case 'l':
+                log_level = atoi(optarg);
+                break;
+            case 'd':
+                log_level = 4;
+                break;
+            case 'V':
+            case 'v':
+                printf(CLI_VERSION "\n\n");
+                exit(0);
+                break;
+            case 'h':
+                printf(HELP_TEXT);
+                exit(0);
+                break;
+        }
+    }
+
+    if (log_level > 4 || log_level < 0) {
+        printf("Invalid log level\n");
+        return 1;
+    }
+
+    int command_index = optind;
+
+    char *command = argv[command_index];
+    if (!command) {
+        printf(HELP_TEXT);
+        return 0;
+    }
+
+
+    if (strcmp(command, "start") != 0) {
+        printf("not starting the server\n\n");
+        return 1;
+    }
 
     struct MHD_Daemon *daemon = NULL;
     uv_loop_t *loop = uv_default_loop();

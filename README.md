@@ -35,8 +35,7 @@ apt-get install build-essential libtool autotools-dev automake
 
 Dependencies:
 ```bash
-apt-get install libcurl4-gnutls-dev libjson-c-dev libsqlite3-dev libuv1-dev libmicrohttpd
-```
+apt-get install libcurl4-gnutls-dev libjson-c-dev libsqlite3-dev libuv1-dev libmicrohttpd-dev
 
 ### OS X Dependencies (w/ homebrew):
 
