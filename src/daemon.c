@@ -17,27 +17,13 @@ static inline void noop() {};
 #define HELP_TEXT "usage: storjshare [<options>] <command> [<args>]\n\n"         \
     "These are common Storjshare commands for various situations:\n\n"           \
     "  start <config-path>       start a farming node\n"                         \
-    "  stop                      stop a farming node\n"                          \
-    "  restart                   restart a farming node\n"                       \
-    "  status                    check status of node(s)\n"                      \
-    "  logs                      tail the logs for a node\n"                     \
-    "  create                    create a new configuration\n"                   \
-    "  save                      snapshot the currently managed shares\n"        \
-    "  load                      load a snapshot of previously managed shares\n" \
-    "  destroy                   kills the farming node\n"                       \
-    "  killall                   kills all shares and stops the daemon\n"        \
-    "  daemon                    starts the daemon\n"                            \
     "  help [cmd]                display help for [cmd]\n\n"                     \
     "options:\n"                                                                 \
     "  -h, --help                output usage information\n"                     \
     "  -v, --version             output the version number\n"                    \
-    "environment variables:\n"                                                   \
-    "  STORJ_BRIDGE              the bridge host "                               \
-    "(e.g. https://api.storj.io)\n"                                              \
 
 
 #define CLI_VERSION "libstorjshare-0.0.0-alpha.1"
-
 
 static int storjshare_connection(void *cls,
                                  struct MHD_Connection *connection,
@@ -225,7 +211,8 @@ int main(int argc, char **argv)
             goto end_program;
         }
 
-        printf("Config:\n%s\n",config_raw);
+        json_object * jobj = json_tokener_parse(config_raw);
+        printf("Config:\n%s\n",json_object_to_json_string(jobj));
 
         // TODO handle arguments
 
